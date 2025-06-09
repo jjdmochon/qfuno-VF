@@ -64,10 +64,15 @@
             <p id="question-text" class="text-base sm:text-lg text-slate-700 leading-relaxed min-h-[100px]">Cargando pregunta...</p>
         </div>
 
-        <!-- Botones de Respuesta -->
-        <div id="answer-buttons" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-            <button id="true-button" class="true-button bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75">Verdadero</button>
-            <button id="false-button" class="false-button bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-opacity-75">Falso</button>
+        <!-- Contenedor para Botones y Firma -->
+        <div class="mb-6">
+            <!-- Botones de Respuesta -->
+            <div id="answer-buttons" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button id="true-button" class="true-button bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75">Verdadero</button>
+                <button id="false-button" class="false-button bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-opacity-75">Falso</button>
+            </div>
+            <!-- Signature -->
+            <p class="text-xs text-gray-500 mt-4 text-center">Flashcards por Juan J. Díaz-Mochón</p>
         </div>
 
         <!-- Área de Feedback y Justificación -->
@@ -89,10 +94,6 @@
             <p id="final-message-text" class="text-slate-500 mb-6"></p>
             <button id="restart-button" class="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-opacity-75">Reiniciar Quiz</button>
         </div>
-    </div>
-            </div>
-         <!-- Signature -->
-         <p class="text-xs text-gray-500 mt-8 text-center">Flashcards por Juan J. Díaz-Mochón</p>
     </div>
 
     <script>
@@ -196,12 +197,18 @@
 
         let currentQuestionIndex = 0;
         let score = 0;
-        // Inicializar el estado de las respuestas del usuario
-        let userQuestionStates = questions.map(() => ({
-            userAnswer: null, // boolean (true/false) o null si no respondida
-            isCorrect: null,  // boolean o null
-            answered: false   // boolean
-        }));
+        let userQuestionStates;
+
+        /**
+         * Función para barajar un array en su sitio (algoritmo Fisher-Yates).
+         * @param {Array} array El array que se va a barajar.
+         */
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]]; // Intercambio de elementos
+            }
+        }
 
         const questionTextEl = document.getElementById('question-text');
         const trueButton = document.getElementById('true-button');
@@ -223,14 +230,13 @@
         const quizContentEls = [
             document.getElementById('progress-score-section'),
             document.getElementById('question-area'),
-            document.getElementById('answer-buttons'),
-            document.getElementById('feedback-area'), // Se maneja su visibilidad por separado
+            document.getElementById('answer-buttons').parentElement,
+            document.getElementById('feedback-area'),
             document.getElementById('navigation-buttons')
         ];
 
 
         function loadQuestion() {
-            // Resetear clases de resaltado de botones de respuesta
             trueButton.classList.remove('correct-answer-highlight', 'incorrect-selection-highlight', 'selected-answer-user');
             falseButton.classList.remove('correct-answer-highlight', 'incorrect-selection-highlight', 'selected-answer-user');
 
@@ -253,14 +259,13 @@
                 trueButton.classList.add('btn-disabled');
                 falseButton.classList.add('btn-disabled');
 
-                // Resaltar la respuesta del usuario y la correcta si fue incorrecta
                 if (currentState.userAnswer === true) {
                     trueButton.classList.add('selected-answer-user');
                     if (currentState.isCorrect) {
                         trueButton.classList.add('correct-answer-highlight');
                     } else {
                         trueButton.classList.add('incorrect-selection-highlight');
-                        falseButton.classList.add('correct-answer-highlight'); // Resaltar la correcta (Falso)
+                        falseButton.classList.add('correct-answer-highlight');
                     }
                 } else if (currentState.userAnswer === false) {
                     falseButton.classList.add('selected-answer-user');
@@ -268,7 +273,7 @@
                         falseButton.classList.add('correct-answer-highlight');
                     } else {
                         falseButton.classList.add('incorrect-selection-highlight');
-                        trueButton.classList.add('correct-answer-highlight'); // Resaltar la correcta (Verdadero)
+                        trueButton.classList.add('correct-answer-highlight');
                     }
                 }
 
@@ -292,11 +297,11 @@
             }
         }
 
-        function selectAnswer(userSelectedAnswer) { // userSelectedAnswer es true o false
+        function selectAnswer(userSelectedAnswer) {
             const currentQuestion = questions[currentQuestionIndex];
             const currentState = userQuestionStates[currentQuestionIndex];
 
-            if (currentState.answered) return; // No hacer nada si ya se respondió
+            if (currentState.answered) return;
 
             currentState.userAnswer = userSelectedAnswer;
             currentState.answered = true;
@@ -307,7 +312,7 @@
             }
 
             updateScoreDisplay();
-            loadQuestion(); // Recargar para mostrar feedback y deshabilitar botones
+            loadQuestion();
         }
 
         function updateScoreDisplay() {
@@ -338,7 +343,8 @@
             finalMessageTextEl.textContent = message;
         }
         
-        function resetQuiz() {
+        function startQuiz() {
+            shuffleArray(questions);
             currentQuestionIndex = 0;
             score = 0;
             userQuestionStates = questions.map(() => ({
@@ -346,17 +352,15 @@
                 isCorrect: null,
                 answered: false
             }));
-            
+
             resultsAreaEl.classList.add('hidden');
             quizContentEls.forEach(el => el.classList.remove('hidden'));
-            // El feedback area debe estar oculta al inicio de una pregunta no respondida
             feedbackAreaEl.classList.add('hidden');
-
 
             updateScoreDisplay();
             loadQuestion();
         }
-
+        
         trueButton.addEventListener('click', () => selectAnswer(true));
         falseButton.addEventListener('click', () => selectAnswer(false));
 
@@ -372,16 +376,14 @@
                 currentQuestionIndex++;
                 loadQuestion();
             } else {
-                // Lógica para finalizar el quiz
                 showResults();
             }
         });
         
-        restartButton.addEventListener('click', resetQuiz);
+        restartButton.addEventListener('click', startQuiz);
 
-        // Carga inicial
-        loadQuestion();
-        updateScoreDisplay();
+        // Carga inicial del quiz
+        startQuiz();
 
     </script>
 </body>
